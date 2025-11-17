@@ -1,25 +1,88 @@
-CipherGuard: Real-Time Password Entropy Analyzer
+🔐 CipherGuard: Real-Time Password Entropy Analyzer
 
 STATUS: ACTIVE | EXECUTION PROTOCOL: SUCCESS
 
-CipherGuard is a fast, single-page web utility designed to analyze and score password strength against modern security standards, heavily inspired by NIST guidelines.
+🧭 PROJECT_GOAL
 
-Forget green/yellow/red indicators. This tool delivers a detailed, real-time security assessment in a classic, dark terminal aesthetic, giving users immediate, actionable feedback on how to strengthen their passphrases.
+In an era where data breaches are widespread, weak passwords continue to be a major security risk. CipherGuard is built to empower users and developers by providing a rapid, fully client-side utility to evaluate password resilience.
+Its mission: translate NIST password standards into a clear, terminal-style strength report, encouraging the use of strong, high-entropy passphrases.
 
-// CORE_FEATURES
+🧪 ANALYSIS_OVERVIEW
 
-NIST-Inspired Entropy Scoring: Calculates strength based on length, character set diversity (lowercase, uppercase, numbers, symbols), and protection against brute-force attacks.
+CipherGuard is a fast, single-page web application that analyzes and scores password strength according to principles inspired by NIST SP 800-63B.
 
-Breach Dictionary Check: Applies heavy penalties for passwords containing common dictionary words, simple sequences (123, abc), and excessive character repetition.
+Instead of simple red/yellow/green indicators, CipherGuard generates a real-time, terminal-themed security assessment, offering immediate, actionable improvements.
 
-Real-Time Composition Analysis: Instantly displays a [ COMPOSITION_CHECK ] breakdown, indicating whether critical character sets are [ USED ] or [ MISSING ].
+⚙️ CORE_FEATURES
+✅ NIST-Inspired Entropy Scoring
 
-Single-File Integrity: Built entirely with a single, self-contained HTML/Tailwind CSS/JavaScript file for maximum portability and speed.
+Calculates entropy using length + character-set diversity
 
-Hacker Aesthetic: Designed with a monospace font, neon lime highlights, and a dark theme to provide an immersive CYPHER-NODE experience.
+Prioritizes passphrases 12+ characters
 
-// DEPLOYMENT_INFO
+Uses 4 character classes:
 
-Just clone the repository and open index.html in any browser. No dependencies, no server needed.
+lowercase
 
-WARNING: This tool is for educational and testing purposes only. Do not input actual production passwords.
+uppercase
+
+numbers
+
+symbols
+
+This aligns with modern, complexity-balanced password guidance.
+
+🚫 Breach Dictionary & Pattern Detection
+
+CipherGuard applies strict penalties for:
+
+Common dictionary words
+
+Sequential patterns (123, abc)
+
+Excessive repetition (aaaaa)
+
+This reduces vulnerability to dictionary attacks, pattern attacks, and brute-force guessing.
+
+⚡ Real-Time Composition Analysis
+
+Displays a live [ COMPOSITION_CHECK ] table showing which character sets are:
+
+[ USED ]
+
+[ MISSING ]
+
+This helps users immediately understand what to add for maximum entropy.
+
+🗂️ Single-File Integrity
+
+Built entirely using one self-contained HTML + TailwindCSS + JavaScript file.
+No installs. No build steps. No dependencies.
+Just open and run.
+
+🖥️ Immersive Terminal Aesthetic
+
+Dark theme • Neon-lime highlights • Monospace grid
+A complete USER@CYPHER-NODE visual experience.
+
+🚀 DEPLOYMENT
+🔗 Live Demo
+
+👉 https://mohitmohanty.github.io/CipherGuard/
+
+📥 Clone the Repository
+git clone https://github.com/mohitmohanty/CipherGuard
+
+▶️ Run Locally
+
+Just open the file:
+
+index.html
+
+
+in any modern browser.
+
+⚠️ SECURITY WARNING
+
+This tool is for educational and testing purposes only.
+Never enter real production passwords into third-party tools, including this one.
