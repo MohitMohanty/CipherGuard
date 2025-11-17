@@ -79,6 +79,9 @@ Just open:
 
 in any modern browser.
 
+<img width="1913" height="912" alt="image" src="https://github.com/user-attachments/assets/a18239ae-b156-44d2-9332-efba212e7bce" />
+
+
 ## ⚠️ SECURITY WARNING
 
 This tool is for **educational and testing purposes** only.\
