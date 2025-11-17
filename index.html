@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherGuard: Password Strength Analyzer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
+        
+        /* Apply Monospace font for the core terminal experience */
+        .terminal-font {
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Neon Glow Effect */
+        .neon-text {
+            text-shadow: 0 0 5px #a7f3d0, 0 0 10px #6ee7b7; /* Tailwind lime-200/400 */
+        }
+        
+        /* Blinking Cursor Effect */
+        .blinking-cursor::after {
+            content: '_';
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Progress bar styles */
+        #strength-bar {
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Aesthetics */
+        .rounded-terminal {
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-lime-400 min-h-screen p-4 sm:p-8 flex items-center justify-center terminal-font">
+
+    <div class="w-full max-w-4xl bg-gray-950 border-2 border-lime-500 rounded-terminal shadow-2xl shadow-lime-500/30 p-6 sm:p-8">
+        
+        <!-- Header: System Status -->
+        <div class="border-b border-lime-500/50 pb-4 mb-6">
+            <div class="flex justify-between text-lg">
+                <span class="neon-text">USER@CYPHER-NODE:~ $</span>
+                <span>[ STATUS: ACTIVE ]</span>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-bold mt-2 neon-text">
+                Password Entropy Analyzer
+            </h1>
+            <p class="text-sm text-lime-300/70 mt-1">NIST-Inspired Entropy & Policy Check v3.0.4</p>
+        </div>
+
+        <!-- Password Input Area -->
+        <div class="mb-8">
+            <label for="password-input" class="block text-xl mb-3 neon-text">
+                <span class="blinking-cursor">ENTER_PASSWORD</span>
+                <span class="text-gray-500">:</span>
+            </label>
+            <input type="password" id="password-input" placeholder="Type or paste password here..."
+                   class="w-full bg-black border border-lime-500/50 p-4 text-white text-xl terminal-font rounded-md focus:outline-none focus:ring-4 focus:ring-lime-500/50 placeholder-gray-700"
+                   onkeyup="checkStrength(this.value)"
+                   autocomplete="off"
+                   autocapitalize="off"
+                   spellcheck="false">
+        </div>
+
+        <!-- Strength Meter & Scorecard -->
+        <div id="results-container" class="space-y-6">
+            
+            <!-- Overall Score & Progress Bar -->
+            <div class="bg-gray-800/50 p-4 rounded-md border border-lime-500/30">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-lg">STRENGTH_RATING:</span>
+                    <span id="strength-text" class="text-2xl font-bold neon-text">Awaiting Input...</span>
+                </div>
+                <div class="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                    <div id="strength-bar" class="h-full rounded-full" style="width: 0%; background-color: #fca5a5;"></div>
+                </div>
+            </div>
+
+            <!-- Composition Check -->
+            <div class="bg-gray-800/50 p-4 rounded-md border border-lime-500/30">
+                <h3 class="text-xl border-b border-lime-500/50 pb-2 mb-3 neon-text">
+                    [ COMPOSITION_CHECK ]
+                </h3>
+                <ul id="composition-list" class="grid grid-cols-2 gap-2 text-md">
+                    <li class="text-gray-500 flex justify-between"><span>Lowercase:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Uppercase:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Numbers:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Symbols:</span><span class="font-bold">[ N/A ]</span></li>
+                </ul>
+            </div>
+
+            <!-- Detailed Feedback Report -->
+            <div class="bg-gray-800/50 p-4 rounded-md border border-lime-500/30">
+                <h3 class="text-xl border-b border-lime-500/50 pb-2 mb-3 neon-text">
+                    [ ANALYSIS_LOG ]
+                </h3>
+                <ul id="feedback-list" class="space-y-2 text-sm">
+                    <li class="text-gray-500">INIT: Analysis engine ready.</li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Configuration constants
+        const MIN_NIST_LENGTH = 8;
+        const COMMON_DICTIONARY_WORDS = ['password', '123456', 'qwerty', 'admin', 'user', 'abcd', 'zxcvbn', 'hello', 'welcome', 'test', 'login', 'access'];
+        
+        // Regex for character set detection
+        const complexityRegex = {
+            lower: /[a-z]/,
+            upper: /[A-Z]/,
+            number: /[0-9]/,
+            symbol: /[!@#$%^&*()_+={}[\]:;"'<,>.?/\\|~`]/,
+        };
+
+        const strengthLevels = [
+            { score: 0, width: 0, text: "NO_INPUT", color: "#fca5a5" },
+            { score: 20, width: 20, text: "CRITICAL_FAIL", color: "#fca5a5" },
+            { score: 40, width: 40, text: "WEAK_LOW_ENTROPY", color: "#fb923c" },
+            { score: 60, width: 60, text: "FAIR_MODERATE", color: "#facc15" },
+            { score: 80, width: 80, text: "GOOD_HIGH_ENTROPY", color: "#4ade80" },
+            { score: 100, width: 100, text: "EXCELLENT_SECURE", color: "#10b981" },
+        ];
+
+
+        /**
+         * Determines the strength rating based on the raw score.
+         * @param {number} rawScore The calculated score (0-100).
+         * @returns {object} The strength level object.
+         */
+        function getStrengthLevel(rawScore) {
+            if (rawScore === 0) return strengthLevels[0];
+            
+            // Find the highest level the score meets
+            for (let i = strengthLevels.length - 1; i >= 1; i--) {
+                if (rawScore >= strengthLevels[i].score) {
+                    return strengthLevels[i];
+                }
+            }
+            return strengthLevels[1];
+        }
+
+        /**
+         * Real-time password analysis function.
+         * @param {string} password The password string.
+         */
+        function checkStrength(password) {
+            const bar = document.getElementById('strength-bar');
+            const text = document.getElementById('strength-text');
+            const feedback = document.getElementById('feedback-list');
+            const compositionList = document.getElementById('composition-list');
+            const p = password.trim();
+
+            // Handle empty input
+            if (p.length === 0) {
+                const level = strengthLevels[0];
+                bar.style.width = level.width + '%';
+                bar.style.backgroundColor = level.color;
+                text.textContent = level.text;
+                text.classList.remove('neon-text');
+                feedback.innerHTML = '<li class="text-gray-500">INIT: Analysis engine ready.</li>';
+                compositionList.innerHTML = `
+                    <li class="text-gray-500 flex justify-between"><span>Lowercase:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Uppercase:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Numbers:</span><span class="font-bold">[ N/A ]</span></li>
+                    <li class="text-gray-500 flex justify-between"><span>Symbols:</span><span class="font-bold">[ N/A ]</span></li>
+                `;
+                return;
+            }
+
+            // --- ANALYSIS VARIABLES ---
+            let score = 0;
+            const feedbackMessages = [];
+            const compositionStatus = {
+                lower: { label: "Lowercase", present: complexityRegex.lower.test(p) },
+                upper: { label: "Uppercase", present: complexityRegex.upper.test(p) },
+                number: { label: "Numbers", present: complexityRegex.number.test(p) },
+                symbol: { label: "Symbols", present: complexityRegex.symbol.test(p) },
+            };
+            let charSetCount = 0;
+            for (const key in compositionStatus) {
+                if (compositionStatus[key].present) charSetCount++;
+            }
+
+            // --- 1. LENGTH CHECK (Base NIST requirement: minimum 8 chars) ---
+            let lengthBonus = 0;
+            if (p.length < MIN_NIST_LENGTH) {
+                feedbackMessages.push('<li class="text-red-400">ALERT: Password length is less than NIST minimum requirement (' + MIN_NIST_LENGTH + ').</li>');
+                lengthBonus = -30;
+            } else if (p.length >= MIN_NIST_LENGTH && p.length <= 12) {
+                feedbackMessages.push('<li class="text-yellow-400">WARNING: Length is compliant (' + p.length + ' chars), but minimal. Aim for >12.</li>');
+                lengthBonus = 20;
+            } else if (p.length > 12 && p.length <= 16) {
+                feedbackMessages.push('<li class="text-lime-400">OK: Excellent length of ' + p.length + ' characters.</li>');
+                lengthBonus = 40;
+            } else if (p.length > 16) {
+                feedbackMessages.push('<li class="text-lime-400 neon-text">OK: High entropy length of ' + p.length + ' characters.</li>');
+                lengthBonus = 55;
+            }
+            score += lengthBonus;
+
+            // --- 2. COMPLEXITY / CHARACTER SET CHECK (Entropy Proxy) ---
+            if (charSetCount > 0) {
+                score += charSetCount * 10;
+                feedbackMessages.push('<li class="text-lime-400">OK: Utilizes ' + charSetCount + ' character sets for diversity.</li>');
+                if (!compositionStatus.symbol.present) {
+                    feedbackMessages.push('<li class="text-yellow-400">WARNING: Missing symbols for maximum entropy.</li>');
+                }
+            }
+            
+            // --- 3. COMMON PATTERN / DICTIONARY CHECK (NIST disallowance) ---
+            let patternPenalty = 0;
+
+            // Check for sequential patterns
+            const sequences = '01234567890abcdefghijklmnopqrstuvwxyz';
+            if (sequences.includes(p.toLowerCase()) || sequences.includes(p.split('').reverse().join('').toLowerCase())) {
+                patternPenalty -= 25;
+                feedbackMessages.push('<li class="text-red-400">ALERT: Detected simple sequential characters (NIST Policy Violation).</li>');
+            }
+
+            // Check for excessive character repetition
+            if (/(.)\1{3,}/.test(p)) {
+                patternPenalty -= 15;
+                feedbackMessages.push('<li class="text-red-400">ALERT: Excessive character repetition detected.</li>');
+            }
+
+            // Check against known weak phrases
+            let isCommonWord = false;
+            const lowerP = p.toLowerCase();
+            for (const word of COMMON_DICTIONARY_WORDS) {
+                if (lowerP.includes(word)) {
+                    isCommonWord = true;
+                    break;
+                }
+            }
+            if (isCommonWord) {
+                patternPenalty -= 35;
+                feedbackMessages.push('<li class="text-red-400 neon-text">CRITICAL: Contains commonly compromised words (High risk).</li>');
+            }
+            
+            score += patternPenalty;
+
+            // --- 4. Final Score Normalization and Display ---
+            score = Math.max(0, Math.min(100, score));
+
+            const level = getStrengthLevel(score);
+            
+            // Update UI elements
+            bar.style.width = level.width + '%';
+            bar.style.backgroundColor = level.color;
+            text.textContent = level.text + " [" + score + "/100]";
+            
+            if (level.score >= 80) {
+                 text.classList.add('neon-text');
+            } else {
+                 text.classList.remove('neon-text');
+            }
+
+            // --- 5. Update Composition List ---
+            let compositionHTML = '';
+            for (const key in compositionStatus) {
+                const status = compositionStatus[key];
+                const color = status.present ? 'text-lime-400' : 'text-red-400';
+                const tag = status.present ? '[ USED ]' : '[ MISSING ]';
+                compositionHTML += `<li class="${color} flex justify-between">
+                                        <span>${status.label}:</span>
+                                        <span class="font-bold">${tag}</span>
+                                    </li>`;
+            }
+            compositionList.innerHTML = compositionHTML;
+
+
+            // Update feedback log
+            const logContent = feedbackMessages.map(msg => `<li>${msg}</li>`).join('');
+            feedback.innerHTML = logContent;
+        }
+
+        // Initialize on load
+        window.onload = () => {
+             document.getElementById('password-input').focus();
+        };
+
+    </script>
+</body>
+</html>
